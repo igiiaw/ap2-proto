@@ -1,0 +1,30 @@
+// proto/payment/v1/payment.proto
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/igiiaw/ap2-proto-gen/gen/go/payment/v1;paymentv1";
+
+service PaymentService {
+  // Unary: Order Service calls this synchronously during CreateOrder.
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+}
+
+message ProcessPaymentRequest {
+  string order_id = 1;
+  int64  amount   = 2; // cents — matches your int64 discipline
+}
+
+message ProcessPaymentResponse {
+  string        id             = 1;
+  string        order_id       = 2;
+  string        transaction_id = 3;
+  int64         amount         = 4;
+  PaymentStatus status         = 5;
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;  // proto3 requires a zero value
+  PAYMENT_STATUS_AUTHORIZED  = 1;
+  PAYMENT_STATUS_DECLINED    = 2;
+}

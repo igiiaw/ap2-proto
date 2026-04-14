@@ -1,0 +1,67 @@
+# .github/workflows/generate.yml  (in Repo A: ap2-proto)
+name: Generate and Publish Go Stubs
+
+on:
+  push:
+    branches: [main]
+    paths: ['proto/**']
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout proto repo (Repo A)
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
+      - name: Install Go protoc plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.2
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Generate .pb.go into a staging dir
+        run: |
+          mkdir -p out/gen/go
+          protoc \
+            --proto_path=proto \
+            --go_out=out/gen/go         --go_opt=paths=source_relative \
+            --go-grpc_out=out/gen/go    --go-grpc_opt=paths=source_relative \
+            $(find proto -name '*.proto')
+
+      - name: Checkout generated-code repo (Repo B)
+        uses: actions/checkout@v4
+        with:
+          repository: igiiaw/ap2-proto-gen
+          token: ${{ secrets.PROTO_GEN_PAT }}   # PAT with repo scope
+          path: gen-repo
+
+      - name: Sync generated files into Repo B
+        run: |
+          rm -rf gen-repo/gen/go
+          mkdir -p gen-repo/gen
+          cp -r out/gen/go gen-repo/gen/go
+
+      - name: Commit & push
+        working-directory: gen-repo
+        run: |
+          git config user.name  "proto-bot"
+          git config user.email "proto-bot@users.noreply.github.com"
+          git add gen/go
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+            exit 0
+          fi
+          git commit -m "chore: regenerate from ap2-proto@${GITHUB_SHA::7}"
+          git push
