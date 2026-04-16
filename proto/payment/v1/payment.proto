@@ -1,4 +1,3 @@
-// proto/payment/v1/payment.proto
 syntax = "proto3";
 
 package payment.v1;
@@ -6,13 +5,13 @@ package payment.v1;
 option go_package = "github.com/igiiaw/ap2-proto-gen/gen/go/payment/v1;paymentv1";
 
 service PaymentService {
-  // Unary: Order Service calls this synchronously during CreateOrder.
   rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);   // ← THIS LINE
 }
 
 message ProcessPaymentRequest {
   string order_id = 1;
-  int64  amount   = 2; // cents — matches your int64 discipline
+  int64  amount   = 2;
 }
 
 message ProcessPaymentResponse {
@@ -24,18 +23,15 @@ message ProcessPaymentResponse {
 }
 
 message ListPaymentsRequest {
-  string status = 1; // "Authorized" or "Declined"
+  string status = 1;
 }
 
-// reuses ProcessPaymentResponse as the item type to avoid
-// introducing a second, near-identical message. If you later refactor
-// to a shared `Payment` message, both RPCs can adopt it together.
 message ListPaymentsResponse {
   repeated ProcessPaymentResponse payments = 1;
 }
 
 enum PaymentStatus {
-  PAYMENT_STATUS_UNSPECIFIED = 0;  // proto3 requires a zero value
+  PAYMENT_STATUS_UNSPECIFIED = 0;
   PAYMENT_STATUS_AUTHORIZED  = 1;
   PAYMENT_STATUS_DECLINED    = 2;
 }
