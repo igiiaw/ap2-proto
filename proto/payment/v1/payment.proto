@@ -23,6 +23,17 @@ message ProcessPaymentResponse {
   PaymentStatus status         = 5;
 }
 
+message ListPaymentsRequest {
+  string status = 1; // "Authorized" or "Declined"
+}
+
+// reuses ProcessPaymentResponse as the item type to avoid
+// introducing a second, near-identical message. If you later refactor
+// to a shared `Payment` message, both RPCs can adopt it together.
+message ListPaymentsResponse {
+  repeated ProcessPaymentResponse payments = 1;
+}
+
 enum PaymentStatus {
   PAYMENT_STATUS_UNSPECIFIED = 0;  // proto3 requires a zero value
   PAYMENT_STATUS_AUTHORIZED  = 1;
